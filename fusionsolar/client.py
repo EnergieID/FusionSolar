@@ -90,26 +90,73 @@ class Client:
         else:
             return True
 
-    @authenticated
-    def get_stations(self) -> Dict:
-        url = f'{self.base_url}/getStationList'
-        r = self.session.post(url=url, json={})
-        self._validate_response(r)
-        return r.json()
-
     @throttle_retry
     @authenticated
-    def get_kpi_day(self, station_code: str, date: pd.Timestamp) -> Dict:
-        url = f'{self.base_url}/getKpiStationDay'
-        time = int(date.timestamp()) * 1000
-        body = {
-            'stationCodes': station_code,
-            'collectTime': time
-        }
-        r = self.session.post(url=url, json=body)
+    def _request(self, function: str, data={}) -> Dict:
+        url = f'{self.base_url}/{function}'
+        r = self.session.post(url=url, json=data)
         self._validate_response(r)
         return r.json()
 
+    def get_station_list(self) -> Dict:
+        return self._request("getStationList")
+
+    def get_station_kpi_real(self, station_code: str) -> Dict:
+        return self._request("getStationRealKpi", { 'stationCodes': station_code})
+
+    def get_station_kpi_hour(self, station_code: str, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getKpiStationHour", { 'stationCodes': station_code, 'collectTime': time })
+
+    def get_station_kpi_day(self, station_code: str, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getKpiStationDay", { 'stationCodes': station_code, 'collectTime': time })
+
+    def get_station_kpi_month(self, station_code: str, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getKpiStationMonth", { 'stationCodes': station_code, 'collectTime': time })
+
+    def get_station_kpi_year(self, station_code: str, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getKpiStationYear", { 'stationCodes': station_code, 'collectTime': time })
+
+    def get_dev_list(self, station_code) -> Dict:
+        return self._request("getDevList", { 'stationCodes': station_code})
+
+    def get_dev_kpi_real(self, dev_id: str, dev_type_id: int) -> Dict:
+        return self._request("getDevRealKpi", { 'devIds': dev_id, 'devTypeId': dev_type_id } )
+
+    def get_dev_kpi_fivemin(self, dev_id: str, dev_type_id: int, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getDevFiveMinutes", { 'devIds': dev_id, 'devTypeId': dev_type_id, 'collectTime': time } )
+
+    def get_dev_kpi_hour(self, dev_id: str, dev_type_id: int, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getDevKpiHour", { 'devIds': dev_id, 'devTypeId': dev_type_id, 'collectTime': time } )
+
+    def get_dev_kpi_day(self, dev_id: str, dev_type_id: int, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getDevKpiDay", { 'devIds': dev_id, 'devTypeId': dev_type_id, 'collectTime': time } )
+
+    def get_dev_kpi_month(self, dev_id: str, dev_type_id: int, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getDevKpiMonth", { 'devIds': dev_id, 'devTypeId': dev_type_id, 'collectTime': time } )
+
+    def get_dev_kpi_year(self, dev_id: str, dev_type_id: int, date: pd.Timestamp) -> Dict:
+        time = int(date.timestamp()) * 1000
+        return self._request("getDevKpiYear", { 'devIds': dev_id, 'devTypeId': dev_type_id, 'collectTime': time } )
+
+    def dev_on_off(self, dev_id: str, dev_type_id: int, control_type: int) -> Dict:
+        # control_type
+        # 1: power-on
+        # 2: power-off
+        return self._request("devOnOff", { 'devIds': dev_id, 'devTypeId': dev_type_id, 'controlType': control_type } )
+
+    def dev_upgrade(self, dev_id: str, dev_type_id: int) -> Dict:
+        return self._request("devUpgrade", { 'devIds': dev_id, 'devTypeId': dev_type_id } )
+
+    def get_dev_upgradeinfo(self, dev_id: str, dev_type_id: int) -> Dict:
+        return self._request("getDevUpgradeInfo", { 'devIds': dev_id, 'devTypeId': dev_type_id } )
 
 class PandasClient(Client):
     def get_kpi_day(self, station_code: str, date: pd.Timestamp) -> pd.DataFrame:
