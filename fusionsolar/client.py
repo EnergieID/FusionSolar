@@ -160,7 +160,7 @@ class Client:
 
 class PandasClient(Client):
     def get_kpi_day(self, station_code: str, date: pd.Timestamp) -> pd.DataFrame:
-        data = super(PandasClient, self).get_kpi_day(station_code=station_code, date=date)
+        data = super(PandasClient, self).get_station_kpi_day(station_code=station_code, date=date)
         if len(data['data']) == 0:
             return pd.DataFrame()
 
