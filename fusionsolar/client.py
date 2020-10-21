@@ -69,6 +69,13 @@ class Client:
 
         self.token_expiration_time = 0
 
+    def __enter__(self):
+        self.login()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def login(self):
         url = f'{self.base_url}/login'
         body = {
