@@ -14,6 +14,14 @@ class HTTPError(Exception):
 class HTTPError407(HTTPError):
     pass
 
+class HTTPError305(HTTPError):
+    pass
+
+class HTTPError306(HTTPError):
+    pass
+
+class HTTPError307(HTTPError):
+    pass
 
 def authenticated(func):
     """
@@ -51,17 +59,21 @@ def throttle_retry(func):
                     pass
             else:
                 raise e
+        except (HTTPError305, HTTPError306, HTTPError307) as e:
+            # Token as expired or we aren't logged in.. Refresh it.
+            logging.debug("Got login error. Logging back in and retrying")
+            self.login()
+            return func(*args, **kwargs)
 
     return wrapper
 
-
+ 
 class Client:
-    base_url = 'https://eu5.fusionsolar.huawei.com/thirdData'
-
-    def __init__(self, user_name: str, system_code: str, max_retry: int = 10):
+    def __init__(self, user_name: str, system_code: str, max_retry: int = 10, base_url: str = "https://eu5.fusionsolar.huawei.com/thirdData"):
         self.user_name = user_name
         self.system_code = system_code
         self.max_retry = max_retry
+        self.base_url = base_url
 
         self.session = requests.session()
         self.session.headers.update(
@@ -87,7 +99,7 @@ class Client:
         self._validate_response(response=r)
         self.session.headers.update(
             {'XSRF-TOKEN': r.cookies.get(name='XSRF-TOKEN')})
-        self.token_expiration_time = pd.Timestamp.utcnow().timestamp() + 30
+        self.token_expiration_time = pd.Timestamp.utcnow().timestamp() + 1200
 
     @staticmethod
     def _validate_response(response: requests.Response) -> bool:
@@ -98,6 +110,15 @@ class Client:
             if body.get('failCode') == 407:
                 logging.debug('Error 407')
                 raise HTTPError407(body)
+            elif body.get('failCode') == 305:
+                logging.debug('Error 305')
+                raise HTTPError306(body)
+            elif body.get('failCode') == 306:
+                logging.debug('Error 306')
+                raise HTTPError306(body)
+            elif body.get('failCode') == 307:
+                logging.debug('Error 307')
+                raise HTTPError306(body)
             else:
                 raise HTTPError(body)
         else:
