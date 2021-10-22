@@ -69,7 +69,13 @@ def throttle_retry(func):
 
  
 class Client:
-    def __init__(self, user_name: str, system_code: str, max_retry: int = 10, base_url: str = "https://eu5.fusionsolar.huawei.com/thirdData"):
+    def __init__(
+            self,
+            user_name: str,
+            system_code: str,
+            max_retry: int = 10,
+            base_url: str = "https://intl.fusionsolar.huawei.com/thirdData"
+    ):
         self.user_name = user_name
         self.system_code = system_code
         self.max_retry = max_retry
