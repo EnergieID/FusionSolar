@@ -23,6 +23,9 @@ class HTTPError306(HTTPError):
 class HTTPError307(HTTPError):
     pass
 
+class HTTPError401(HTTPError):
+    pass
+
 def authenticated(func):
     """
     Decorator to check if token has expired.
@@ -125,6 +128,9 @@ class Client:
             elif body.get('failCode') == 307:
                 logging.debug('Error 307')
                 raise HTTPError306(body)
+            elif body.get('failCode') == 401:
+                logging.debug('Error 401')
+                raise HTTPError401
             else:
                 raise HTTPError(body)
         else:
