@@ -110,6 +110,16 @@ class Client:
             {'XSRF-TOKEN': r.cookies.get(name='XSRF-TOKEN')})
         self.token_expiration_time = pd.Timestamp.utcnow().timestamp() + 1200
 
+    def logout(self):
+        url = f'{self.base_url}/logout'
+        body = {
+            'xsrfToken': self.session.headers['XSRF-TOKEN']
+        }
+        self.session.cookies.clear()
+        r = self.session.post(url=url, json=body)
+        self._validate_response(response=r)
+        self.token_expiration_time = 0
+
     @staticmethod
     def _validate_response(response: requests.Response) -> bool:
         response.raise_for_status()
