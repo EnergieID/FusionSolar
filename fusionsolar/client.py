@@ -248,7 +248,7 @@ class Client:
                              {'devIds': dev_id, 'devTypeId': dev_type_id})
 
 
-def data_to_pandas(data):
+def data_to_pandas(data, tz=None):
     if len(data['data']) == 0:
         return pd.DataFrame()
     elif len(data['data']) == 1:
@@ -264,6 +264,8 @@ def data_to_pandas(data):
     df['collectTime'] = pd.to_datetime(df['collectTime'], unit='ms',
                                     utc=True)
     df.set_index('collectTime', inplace=True)
+    if tz:
+        df.index = [i.astimezone(tz=tz) for i in df.index]
     df = df.astype(float)
     return df
 
@@ -272,7 +274,8 @@ class PandasClient(Client):
                     date: pd.Timestamp) -> pd.DataFrame:
         data = super(PandasClient, self).get_station_kpi_day(
             station_code=station_code, date=date)
-        return data_to_pandas(data)
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
     
     def get_kpi_real(self, station_code: str) -> pd.DataFrame:
         data = super(PandasClient, self).get_station_kpi_real(
@@ -283,16 +286,19 @@ class PandasClient(Client):
                              date: pd.Timestamp) -> Dict:
         data = super(PandasClient, self).get_station_kpi_hour(
             station_code=station_code, date=date)
-        return data_to_pandas(data)
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
 
     def get_kpi_month(self, station_code: str,
                               date: pd.Timestamp) -> Dict:
         data = super(PandasClient, self).get_station_kpi_month(
             station_code=station_code, date=date)
-        return data_to_pandas(data)
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
 
     def get_kpi_year(self, station_code: str,
                              date: pd.Timestamp) -> Dict:
         data = super(PandasClient, self).get_station_kpi_year(
             station_code=station_code, date=date)
-        return data_to_pandas(data)
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
