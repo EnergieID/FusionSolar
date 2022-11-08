@@ -95,7 +95,7 @@ class Client:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.logout()
 
     def login(self):
         url = f'{self.base_url}/login'
@@ -109,6 +109,16 @@ class Client:
         self.session.headers.update(
             {'XSRF-TOKEN': r.cookies.get(name='XSRF-TOKEN')})
         self.token_expiration_time = pd.Timestamp.utcnow().timestamp() + 1200
+
+    def logout(self):
+        url = f'{self.base_url}/logout'
+        body = {
+            'xsrfToken': self.session.headers['XSRF-TOKEN']
+        }
+        self.session.cookies.clear()
+        r = self.session.post(url=url, json=body)
+        self._validate_response(response=r)
+        self.token_expiration_time = 0
 
     @staticmethod
     def _validate_response(response: requests.Response) -> bool:
@@ -238,23 +248,57 @@ class Client:
                              {'devIds': dev_id, 'devTypeId': dev_type_id})
 
 
+def data_to_pandas(data, tz=None):
+    if len(data['data']) == 0:
+        return pd.DataFrame()
+    elif len(data['data']) == 1:
+        return pd.Series(data["data"][0]["dataItemMap"])
+
+    def flatten_data(j):
+        for point in j['data']:
+            line = {'collectTime': point['collectTime']}
+            line.update(point['dataItemMap'])
+            yield line
+
+    df = pd.DataFrame(flatten_data(data))
+    df['collectTime'] = pd.to_datetime(df['collectTime'], unit='ms',
+                                    utc=True)
+    df.set_index('collectTime', inplace=True)
+    if tz:
+        df.index = [i.astimezone(tz=tz) for i in df.index]
+    df = df.astype(float)
+    return df
+
 class PandasClient(Client):
     def get_kpi_day(self, station_code: str,
                     date: pd.Timestamp) -> pd.DataFrame:
         data = super(PandasClient, self).get_station_kpi_day(
             station_code=station_code, date=date)
-        if len(data['data']) == 0:
-            return pd.DataFrame()
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
+    
+    def get_kpi_real(self, station_code: str) -> pd.DataFrame:
+        data = super(PandasClient, self).get_station_kpi_real(
+            station_code=station_code)
+        return data_to_pandas(data)
 
-        def flatten_data(j):
-            for point in j['data']:
-                line = {'collectTime': point['collectTime']}
-                line.update(point['dataItemMap'])
-                yield line
+    def get_kpi_hour(self, station_code: str,
+                             date: pd.Timestamp) -> Dict:
+        data = super(PandasClient, self).get_station_kpi_hour(
+            station_code=station_code, date=date)
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
 
-        df = pd.DataFrame(flatten_data(data))
-        df['collectTime'] = pd.to_datetime(df['collectTime'], unit='ms',
-                                           utc=True)
-        df.set_index('collectTime', inplace=True)
-        df = df.astype(float)
-        return df
+    def get_kpi_month(self, station_code: str,
+                              date: pd.Timestamp) -> Dict:
+        data = super(PandasClient, self).get_station_kpi_month(
+            station_code=station_code, date=date)
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
+
+    def get_kpi_year(self, station_code: str,
+                             date: pd.Timestamp) -> Dict:
+        data = super(PandasClient, self).get_station_kpi_year(
+            station_code=station_code, date=date)
+        tz = date.tz if hasattr(date, "tz") else None
+        return data_to_pandas(data, tz=tz)
