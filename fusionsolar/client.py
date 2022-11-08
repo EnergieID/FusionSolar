@@ -95,7 +95,7 @@ class Client:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.logout()
 
     def login(self):
         url = f'{self.base_url}/login'
